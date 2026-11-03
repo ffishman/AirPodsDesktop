@@ -37,6 +37,20 @@ target_include_directories(QuickConnectTests PRIVATE "${CMAKE_SOURCE_DIR}")
 
 add_test(NAME QuickConnectTests COMMAND QuickConnectTests)
 
+add_executable(AudioStallTests AudioStallTests.cpp)
+
+target_link_libraries(
+    AudioStallTests
+
+    PRIVATE
+    apd_core
+    Qt6::Test
+)
+
+target_include_directories(AudioStallTests PRIVATE "${CMAKE_SOURCE_DIR}")
+
+add_test(NAME AudioStallTests COMMAND AudioStallTests)
+
 add_executable(AnimationViewTests AnimationViewTests.cpp)
 
 target_link_libraries(
@@ -95,7 +109,7 @@ foreach(scale_factor 1 1.25 1.5 2)
     )
 endforeach()
 
-foreach(test_target AirPodsDomainTests QuickConnectTests AnimationViewTests UiRenderingTests)
+foreach(test_target AirPodsDomainTests QuickConnectTests AudioStallTests AnimationViewTests UiRenderingTests)
     add_custom_command(
         TARGET ${test_target}
         POST_BUILD

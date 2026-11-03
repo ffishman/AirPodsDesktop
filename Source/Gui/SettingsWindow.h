@@ -81,6 +81,7 @@ private:
 
     // Features
     void On_cbLowAudioLatency_toggled(bool checked);
+    void On_cbAudioStallRecovery_currentIndexChanged(int index);
     void On_cbTrayQuickConnectEnabled_toggled(bool checked);
     void On_cbTrayQuickConnectDevice_currentIndexChanged(int index);
     void On_cbAutoEarDetection_toggled(bool checked);
@@ -100,6 +101,7 @@ private:
         _ui.cbAutoEarDetection->setAccessibleName(_ui.lbAutoEarDetection->text());
         _ui.cbTrayQuickConnectEnabled->setAccessibleName(_ui.lbTrayQuickConnect->text());
         _ui.cbAppearanceMode->setAccessibleName(_ui.lbAppearance->text());
+        _ui.cbAudioStallRecovery->setAccessibleName(_ui.lbAudioStallRecovery->text());
         _aboutTextTemplate = _ui.label->text();
         InitCreditsText();
         UpdateDescriptions();

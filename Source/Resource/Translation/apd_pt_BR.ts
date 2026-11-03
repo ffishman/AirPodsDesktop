@@ -163,6 +163,30 @@ Aproveite.</translation>
         <source>Low audio latency (may cause hiss)</source>
         <translation>Baixa latência de áudio (pode causar chiado)</translation>
     </message>
+    <message>
+        <source>Silent audio recovery</source>
+        <translation>Recuperação de áudio mudo</translation>
+    </message>
+    <message>
+        <source>Bluetooth audio looks stuck: the headset is connected but nothing is playing on it. Observe only mode just logs this; choose Automatic in Settings to fix it for you.</source>
+        <translation>O áudio Bluetooth parece travado: o fone está conectado, mas nada toca nele. O modo Só observar apenas registra isso; escolha Automático nas Configurações para corrigir sozinho.</translation>
+    </message>
+    <message>
+        <source>Bluetooth audio stopped playing. Reconnecting the headset...</source>
+        <translation>O áudio Bluetooth parou de tocar. Reconectando o fone...</translation>
+    </message>
+    <message>
+        <source>Bluetooth audio is playing again.</source>
+        <translation>O áudio Bluetooth voltou a tocar.</translation>
+    </message>
+    <message>
+        <source>Windows did not reconnect the Bluetooth headset. Turn it off and on in the Bluetooth settings.</source>
+        <translation>O Windows não reconectou o fone Bluetooth. Desligue e ligue o fone nas configurações de Bluetooth.</translation>
+    </message>
+    <message>
+        <source>Bluetooth audio keeps getting stuck. Automatic recovery is paused for a few minutes.</source>
+        <translation>O áudio Bluetooth continua travando. A recuperação automática foi pausada por alguns minutos.</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
@@ -268,6 +292,10 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>Um clique no ícone da bandeja conecta o dispositivo selecionado em vez de abrir a janela principal. Um clique duplo continua abrindo-a.</translation>
+    </message>
+    <message>
+        <source>Fixes Bluetooth audio that stays connected but silent. When Windows still shows the headset as the output but no sound reaches it, the connection is turned off and on again. &quot;Observe only&quot; just writes what it detects to the log.</source>
+        <translation>Corrige o áudio Bluetooth que fica conectado mas mudo. Quando o Windows ainda mostra o fone como saída mas nenhum som chega até ele, a conexão é desligada e ligada de novo. &quot;Só observar&quot; apenas registra no log o que for detectado.</translation>
     </message>
 </context>
 <context>
@@ -402,6 +430,22 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     <message>
         <source>Dark</source>
         <translation>Escuro</translation>
+    </message>
+    <message>
+        <source>Silent audio recovery</source>
+        <translation>Recuperação de áudio mudo</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Desligado</translation>
+    </message>
+    <message>
+        <source>Observe only</source>
+        <translation>Só observar</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation>Automático</translation>
     </message>
 </context>
 <context>

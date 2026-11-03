@@ -113,13 +113,17 @@ SettingsWindow::SettingsWindow(
     // The default combo popup delegate ignores stylesheet item padding; the styled one honours it.
     _ui.cbLanguages->setItemDelegate(new QStyledItemDelegate{_ui.cbLanguages});
     _ui.cbAppearanceMode->setItemDelegate(new QStyledItemDelegate{_ui.cbAppearanceMode});
+    _ui.cbAudioStallRecovery->setItemDelegate(new QStyledItemDelegate{_ui.cbAudioStallRecovery});
     _ui.cbTrayQuickConnectDevice->setItemDelegate(
         new QStyledItemDelegate{_ui.cbTrayQuickConnectDevice});
     ConfigureComboBoxPopup(_ui.cbLanguages);
     ConfigureComboBoxPopup(_ui.cbAppearanceMode);
+    ConfigureComboBoxPopup(_ui.cbAudioStallRecovery);
     ConfigureComboBoxPopup(_ui.cbTrayQuickConnectDevice);
     _ui.lbAppearance->setBuddy(_ui.cbAppearanceMode);
     _ui.cbAppearanceMode->setAccessibleName(_ui.lbAppearance->text());
+    _ui.lbAudioStallRecovery->setBuddy(_ui.cbAudioStallRecovery);
+    _ui.cbAudioStallRecovery->setAccessibleName(_ui.lbAudioStallRecovery->text());
 
     // Neither is the dialog's default action; without this the first one would be drawn as the
     // accent-coloured default button.
@@ -214,6 +218,14 @@ SettingsWindow::SettingsWindow(
         [this](int index) {
             if (_trigger) {
                 On_cbTrayQuickConnectDevice_currentIndexChanged(index);
+            }
+        });
+
+    connect(
+        _ui.cbAudioStallRecovery, qOverload<int>(&QComboBox::currentIndexChanged), this,
+        [this](int index) {
+            if (_trigger) {
+                On_cbAudioStallRecovery_currentIndexChanged(index);
             }
         });
 
@@ -324,6 +336,7 @@ void SettingsWindow::UpdateDescriptions()
     const auto &constMetaFields = GetConstMetaFields();
 
     _ui.lbDescLowAudioLatency->setText(constMetaFields.low_audio_latency.Description());
+    _ui.lbDescAudioStallRecovery->setText(constMetaFields.audio_stall_recovery.Description());
     _ui.lbDescAutoEarDetection->setText(constMetaFields.automatic_ear_detection.Description());
     _ui.lbDescTrayQuickConnect->setText(constMetaFields.tray_quick_connect_enabled.Description());
 
@@ -409,6 +422,8 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
     _ui.cbAppearanceMode->setCurrentIndex(static_cast<int>(fields.appearance_mode));
 
     _ui.cbLowAudioLatency->setChecked(fields.low_audio_latency);
+
+    _ui.cbAudioStallRecovery->setCurrentIndex(static_cast<int>(fields.audio_stall_recovery));
 
     _ui.cbAutoEarDetection->setChecked(fields.automatic_ear_detection);
 
@@ -571,6 +586,16 @@ void SettingsWindow::On_cbDisplayBatteryOnTaskbar_toggled(TaskbarStatusBehavior 
 void SettingsWindow::On_cbLowAudioLatency_toggled(bool checked)
 {
     ModifiableAccess()->low_audio_latency = checked;
+}
+
+void SettingsWindow::On_cbAudioStallRecovery_currentIndexChanged(int index)
+{
+    if (index < static_cast<int>(AudioStallRecovery::Disable) ||
+        index > static_cast<int>(AudioStallRecovery::Recover))
+    {
+        return;
+    }
+    ModifiableAccess()->audio_stall_recovery = static_cast<AudioStallRecovery>(index);
 }
 
 void SettingsWindow::On_cbAutoEarDetection_toggled(bool checked)

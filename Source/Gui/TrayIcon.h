@@ -26,6 +26,7 @@
 #include <QAction>
 
 #include "../Core/AirPods.h"
+#include "../Core/AudioStall.h"
 #include "../Core/QuickConnect.h"
 #include "../Core/Update.h"
 #include "Base.h"
@@ -49,6 +50,7 @@ public:
     }
 
     void UpdateState(const Core::AirPods::State &state);
+    void OnAudioStallNotice(Core::AudioStall::Notice notice);
     void Unavailable();
     void Disconnect();
     void Unbind();

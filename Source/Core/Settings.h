@@ -33,6 +33,7 @@ class Repository;
 enum class TrayIconBatteryBehavior : uint32_t { Disable, WhenLowBattery, Always };
 enum class TaskbarStatusBehavior : uint32_t { Disable, Text, Icon };
 enum class AppearanceMode : uint32_t { System, Light, Dark };
+enum class AudioStallRecovery : uint32_t { Disable, Observe, Recover };
 enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
 
 // Receives settings side effects so that this module doesn't need to know
@@ -54,6 +55,7 @@ public:
     virtual void OnTrayQuickConnectEnabledChanged(bool enable) = 0;
     virtual void OnTrayQuickConnectDeviceChanged(const QString &deviceId) = 0;
     virtual void OnTaskbarBatteryChanged(TaskbarStatusBehavior behavior) = 0;
+    virtual void OnAudioStallRecoveryChanged(AudioStallRecovery) {}
 };
 
 void SetApplyObserver(ApplyObserver *observer);
@@ -71,6 +73,9 @@ void SetRepository(std::unique_ptr<Repository> repository);
     callback(bool, low_audio_latency, {false},                                                     \
         Impl::OnApply(&OnApply_low_audio_latency),                                                 \
         Impl::Desc{QT_TRANSLATE_NOOP("QObject", "Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.")}) \
+    callback(AudioStallRecovery, audio_stall_recovery, {AudioStallRecovery::Disable},               \
+        Impl::OnApply(&OnApply_audio_stall_recovery),                                              \
+        Impl::Desc{QT_TRANSLATE_NOOP("QObject", "Fixes Bluetooth audio that stays connected but silent. When Windows still shows the headset as the output but no sound reaches it, the connection is turned off and on again. \"Observe only\" just writes what it detects to the log.")}) \
     callback(bool, automatic_ear_detection, {true},                                                \
         Impl::OnApply(&OnApply_automatic_ear_detection),                                           \
         Impl::Desc{QT_TRANSLATE_NOOP("QObject", "It automatically pauses or resumes media when your AirPods are taken out or put in your ears.")}) \
@@ -248,6 +253,7 @@ void OnApply_language_locale(const Fields &newFields);
 void OnApply_appearance_mode(const Fields &newFields);
 void OnApply_auto_run(const Fields &newFields);
 void OnApply_low_audio_latency(const Fields &newFields);
+void OnApply_audio_stall_recovery(const Fields &newFields);
 void OnApply_automatic_ear_detection(const Fields &newFields);
 void OnApply_rssi_min(const Fields &newFields);
 void OnApply_device_address(const Fields &newFields);

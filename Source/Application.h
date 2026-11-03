@@ -35,6 +35,10 @@ namespace Core::LowAudioLatency {
 class Controller;
 }
 
+namespace Core::AudioStall {
+class Controller;
+}
+
 namespace Core::AutoStart {
 class Service;
 }
@@ -91,6 +95,7 @@ private:
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Core::AirPods::Manager> _airPodsManager;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
+    std::unique_ptr<Core::AudioStall::Controller> _audioStall;
     std::unique_ptr<Core::AutoStart::Service> _autoStartService;
 
     void InitSettings(Core::Settings::LoadResult loadResult);
@@ -113,6 +118,7 @@ private:
     void OnTrayQuickConnectEnabledChanged(bool enable) override;
     void OnTrayQuickConnectDeviceChanged(const QString &deviceId) override;
     void OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior) override;
+    void OnAudioStallRecoveryChanged(Core::Settings::AudioStallRecovery mode) override;
 };
 
 #define ApdApp (dynamic_cast<ApdApplication *>(QCoreApplication::instance()))

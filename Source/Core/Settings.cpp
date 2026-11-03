@@ -97,6 +97,15 @@ void OnApply_low_audio_latency(const Fields &newFields)
     });
 }
 
+void OnApply_audio_stall_recovery(const Fields &newFields)
+{
+    LOG(Info, "OnApply_audio_stall_recovery: {}", newFields.audio_stall_recovery);
+
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnAudioStallRecoveryChanged(newFields.audio_stall_recovery);
+    });
+}
+
 void OnApply_automatic_ear_detection(const Fields &newFields)
 {
     LOG(Info, "OnApply_automatic_ear_detection: {}", newFields.automatic_ear_detection);

@@ -447,6 +447,43 @@ void TrayIcon::OnQuickConnectOutcome(Core::QuickConnect::Outcome outcome, const 
     ShowMessage(tr("Quick connect"), text, icon);
 }
 
+void TrayIcon::OnAudioStallNotice(Core::AudioStall::Notice notice)
+{
+    using Core::AudioStall::Notice;
+
+    QString text;
+    QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::Information;
+
+    switch (notice) {
+    case Notice::StallObserved:
+        text = tr("Bluetooth audio looks stuck: the headset is connected but nothing is playing on "
+                  "it. Observe only mode just logs this; choose Automatic in Settings to fix it "
+                  "for you.");
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Notice::RecoveryStarted:
+        text = tr("Bluetooth audio stopped playing. Reconnecting the headset...");
+        break;
+    case Notice::RecoverySucceeded:
+        text = tr("Bluetooth audio is playing again.");
+        break;
+    case Notice::RecoveryFailed:
+        text = tr("Windows did not reconnect the Bluetooth headset. Turn it off and on in the "
+                  "Bluetooth settings.");
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Notice::RecoveryGaveUp:
+        text = tr("Bluetooth audio keeps getting stuck. Automatic recovery is paused for a few "
+                  "minutes.");
+        icon = QSystemTrayIcon::Warning;
+        break;
+    default:
+        return;
+    }
+
+    ShowMessage(tr("Silent audio recovery"), text, icon);
+}
+
 void TrayIcon::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value)
 {
     _trayIconBatteryBehavior = value;

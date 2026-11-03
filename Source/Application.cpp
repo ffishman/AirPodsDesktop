@@ -32,12 +32,14 @@
 #include "Gui/TrayIcon.h"
 #include "Gui/Theme.h"
 #include "Core/AirPods.h"
+#include "Core/AudioStall.h"
 #include "Core/AutoStart.h"
 #include "Core/Bluetooth.h"
 #include "Core/GlobalMedia.h"
 #include "Core/LowAudioLatency.h"
 #include "Core/QuickConnect.h"
 #if defined APD_OS_WIN
+    #include "Core/AudioStall_win.h"
     #include "Core/QuickConnect_win.h"
 #endif
 #include "Core/Settings.h"
@@ -210,6 +212,16 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _mainWindow->StartUpdateChecks();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
+#if defined APD_OS_WIN
+    _audioStall = std::make_unique<Core::AudioStall::Controller>(
+        std::make_shared<Core::AudioStall::WindowsBackend>());
+#else
+    _audioStall = std::make_unique<Core::AudioStall::Controller>(
+        std::make_shared<Core::AudioStall::NullBackend>());
+#endif
+    connect(
+        _audioStall.get(), &Core::AudioStall::Controller::NoticeRaised, _trayIcon.get(),
+        &Gui::TrayIcon::OnAudioStallNotice);
     _autoStartService = Core::AutoStart::CreateAutoStartService();
     _airPodsManager = std::make_unique<Core::AirPods::Manager>(this);
 
@@ -457,6 +469,24 @@ void ApdApplication::OnTrayQuickConnectEnabledChanged(bool enable)
 void ApdApplication::OnTrayQuickConnectDeviceChanged(const QString &deviceId)
 {
     _quickConnect->SetDeviceId(deviceId);
+}
+
+void ApdApplication::OnAudioStallRecoveryChanged(Core::Settings::AudioStallRecovery mode)
+{
+    using Core::AudioStall::Mode;
+    using Core::Settings::AudioStallRecovery;
+
+    switch (mode) {
+    case AudioStallRecovery::Disable:
+        _audioStall->SetMode(Mode::Disabled);
+        break;
+    case AudioStallRecovery::Observe:
+        _audioStall->SetMode(Mode::Observe);
+        break;
+    case AudioStallRecovery::Recover:
+        _audioStall->SetMode(Mode::Recover);
+        break;
+    }
 }
 
 void ApdApplication::OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior)
