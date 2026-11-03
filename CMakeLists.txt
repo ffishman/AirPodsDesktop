@@ -370,6 +370,7 @@ set(ADD_EXECUTABLE_ARG)
 if (WIN32)
     list(APPEND APD_CORE_CODE_FILES
         "Source/Core/AutoStart_win.cpp"
+        "Source/Core/BtAudio_win.cpp"
         "Source/Core/Bluetooth_win.cpp"
         "Source/Core/GlobalMedia_win.cpp"
         "Source/Core/QuickConnect_win.cpp"
