@@ -37,8 +37,7 @@ this failure the endpoint is active.
 
 ### Evidence
 
-Every 500 ms, on the default multimedia render endpoint, and only when it is a Bluetooth endpoint
-(its KS filter id contains `bthenum` or `bthhfenum`):
+Every 500 ms, on the default multimedia render endpoint, and only when it is a Bluetooth endpoint:
 
 1. **Sessions**: is any other process's audio session active? Sessions of this process (the probe
    and the low audio latency player) are ignored.
@@ -50,6 +49,14 @@ Every 500 ms, on the default multimedia render endpoint, and only when it is a B
 3. **Peak meter** (weak evidence, log only): a zero peak with active sessions is normal for a paused
    video or a muted call, so it never triggers recovery. It is logged once per episode so the field
    log shows whether a real stall was also visible there, and whether the probe missed one.
+
+A Bluetooth endpoint is recognized by the device instance id stored on the endpoint
+(`{b3f8fa53-0004-438e-9003-51a46e139bfc},39`, `BTHENUM\...` for A2DP or `BTHHFENUM\...` for
+hands-free), with the KS filter id as a fallback. The filter id alone is not enough: with Bluetooth
+audio offload (seen with Intel Smart Sound Technology, filter `intelaudio#...\intcbttoporender_...`)
+the filter belongs to the platform audio driver. That driver still implements
+`KSPROPSETID_BtAudio`: `BASICSUPPORT` queries for `ONESHOT_RECONNECT` and `ONESHOT_DISCONNECT`
+return `KSPROPERTY_TYPE_GET` support, so recovery works the same way.
 
 A stall is declared after the probe stands still for 5 s with sessions active.
 

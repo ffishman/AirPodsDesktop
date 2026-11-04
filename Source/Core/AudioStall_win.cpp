@@ -185,7 +185,7 @@ bool WindowsBackend::ResolveDefaultEndpoint()
     _endpointId = endpointId;
 
     const auto filterDeviceId = BtAudio::GetConnectedFilterDeviceId(*_device.operator->());
-    _bluetooth = filterDeviceId.has_value() && BtAudio::IsBluetoothFilterDeviceId(*filterDeviceId);
+    _bluetooth = BtAudio::IsBluetoothEndpoint(*_device.operator->(), filterDeviceId);
     _containerId = BtAudio::GetEndpointContainerId(*_device.operator->()).value_or(QString{});
 
     if (_bluetooth) {
@@ -206,8 +206,10 @@ bool WindowsBackend::ResolveDefaultEndpoint()
         }
     }
 
-    LOG(Info, "AudioStall: default output is now {} (container {}). bluetooth={}",
-        BtAudio::MaskDeviceId(_endpointId), BtAudio::MaskDeviceId(_containerId), _bluetooth);
+    LOG(Info, "AudioStall: default output is now {} (container {}). bluetooth={} offloaded={}",
+        BtAudio::MaskDeviceId(_endpointId), BtAudio::MaskDeviceId(_containerId), _bluetooth,
+        _bluetooth &&
+            !(filterDeviceId.has_value() && BtAudio::IsBluetoothFilterDeviceId(*filterDeviceId)));
     return true;
 }
 

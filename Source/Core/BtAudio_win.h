@@ -87,6 +87,12 @@ std::optional<QString> GetConnectedFilterDeviceId(IMMDevice &endpoint);
 // True when the filter id belongs to the Microsoft Bluetooth audio stack (A2DP or hands-free).
 bool IsBluetoothFilterDeviceId(const QString &filterDeviceId);
 
+// True when the endpoint renders to a Bluetooth device. Checks the device instance the endpoint was
+// created for (`BTHENUM\...` for A2DP, `BTHHFENUM\...` for hands-free) first, because with
+// Bluetooth audio offload (for example Intel Smart Sound Technology) the KS filter belongs to the
+// platform audio driver, not to the Bluetooth stack. Falls back to the filter id.
+bool IsBluetoothEndpoint(IMMDevice &endpoint, const std::optional<QString> &filterDeviceId);
+
 // Sends a BtAudio one-shot property to the driver behind `endpointId`. Returns the HRESULT of the
 // request; S_OK means the driver accepted it, not that the link state already changed.
 // Initializes COM on the calling thread for the duration of the call.

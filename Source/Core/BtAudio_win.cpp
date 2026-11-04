@@ -261,6 +261,46 @@ bool IsBluetoothFilterDeviceId(const QString &filterDeviceId)
            filterDeviceId.contains("bthhfenum", Qt::CaseInsensitive);
 }
 
+namespace {
+
+// Endpoint property holding the device instance id the endpoint belongs to, for example
+// `{1}.BTHENUM\{0000110B-0000-1000-8000-00805F9B34FB}_VID&0001004C_PID&2027\...`. Undocumented,
+// but present on both offloaded and non-offloaded Bluetooth endpoints. Missing or unexpected values
+// fall back to the filter id check.
+constexpr PROPERTYKEY kPkeyEndpointDeviceInstanceId{
+    {0xb3f8fa53, 0x0004, 0x438e, {0x90, 0x03, 0x51, 0xa4, 0x6e, 0x13, 0x9b, 0xfc}}, 39};
+
+bool IsBluetoothInstanceId(const QString &instanceId)
+{
+    return instanceId.contains("bthenum\\", Qt::CaseInsensitive) ||
+           instanceId.contains("bthhfenum\\", Qt::CaseInsensitive);
+}
+
+} // namespace
+
+bool IsBluetoothEndpoint(IMMDevice &endpoint, const std::optional<QString> &filterDeviceId)
+{
+    OS::Windows::Com::UniquePtr<IPropertyStore> propertyStore;
+    if (SUCCEEDED(endpoint.OpenPropertyStore(STGM_READ, propertyStore.ReleaseAndAddressOf()))) {
+        PROPVARIANT value;
+        PropVariantInit(&value);
+        if (SUCCEEDED(propertyStore->GetValue(kPkeyEndpointDeviceInstanceId, &value))) {
+            const QString instanceId = value.vt == VT_LPWSTR && value.pwszVal != nullptr
+                                           ? QString::fromWCharArray(value.pwszVal)
+                                           : QString{};
+            PropVariantClear(&value);
+            if (IsBluetoothInstanceId(instanceId)) {
+                return true;
+            }
+        }
+        else {
+            PropVariantClear(&value);
+        }
+    }
+
+    return filterDeviceId.has_value() && IsBluetoothFilterDeviceId(*filterDeviceId);
+}
+
 HRESULT SendOneShot(const QString &endpointId, OneShot oneShot, std::stop_token stopToken)
 {
     ScopedComApartment apartment;
