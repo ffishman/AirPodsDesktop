@@ -68,8 +68,11 @@ auto StateManager::OnAdvReceived(Advertisement adv) -> std::optional<UpdateEvent
 {
     std::lock_guard<std::mutex> lock{_mutex};
 
-    if (!IsPossibleDesiredAdv(adv)) {
-        LOG(Warn, "This adv may not be broadcast from the device we desire.");
+    const bool desired = IsPossibleDesiredAdv(adv);
+    ReportRejects(Clock::now());
+
+    if (!desired) {
+        LOG(Trace, "This adv may not be broadcast from the device we desire.");
         return std::nullopt;
     }
 
@@ -106,7 +109,8 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
 {
     const auto advRssi = adv.GetRssi();
     if (advRssi < _rssiMin) {
-        LOG(Warn,
+        ++_rejects.rssi;
+        LOG(Trace,
             "IsPossibleDesiredAdv returns false. Reason: RSSI is less than the limit. "
             "curr: '{}' min: '{}'",
             advRssi, _rssiMin);
@@ -126,7 +130,8 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
                cachedModel != advState.model;
     };
     if (hasDifferentModel(lastAdv) || hasDifferentModel(lastAnotherAdv)) {
-        LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: model does not match cached state");
+        ++_rejects.model;
+        LOG(Trace, "IsPossibleDesiredAdv returns false. Reason: model does not match cached state");
         return false;
     }
 
@@ -154,7 +159,8 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
         }
 
         if (leftBatteryDiff > 1 || rightBatteryDiff > 1 || caseBatteryDiff > 1) {
-            LOG(Warn,
+            ++_rejects.battery;
+            LOG(Trace,
                 "IsPossibleDesiredAdv returns false. Reason: BatteryDiff l='{}' r='{}' c='{}'",
                 leftBatteryDiff, rightBatteryDiff, caseBatteryDiff);
             return false;
@@ -162,24 +168,47 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
 
         int16_t rssiDiff = std::abs(advRssi - lastAdv->first.GetRssi());
         if (rssiDiff > 50) {
-            LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Current side rssiDiff '{}'",
+            ++_rejects.rssiDiff;
+            LOG(Trace, "IsPossibleDesiredAdv returns false. Reason: Current side rssiDiff '{}'",
                 rssiDiff);
             return false;
         }
 
-        LOG(Warn, "Address changed, but it might still be the same device.");
+        LOG(Trace, "Address changed, but it might still be the same device.");
     }
 
     if (lastAnotherAdv.has_value()) {
         int16_t rssiDiff = std::abs(advRssi - lastAnotherAdv->first.GetRssi());
         if (rssiDiff > 50) {
-            LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Another side rssiDiff '{}'",
+            ++_rejects.rssiDiff;
+            LOG(Trace, "IsPossibleDesiredAdv returns false. Reason: Another side rssiDiff '{}'",
                 rssiDiff);
             return false;
         }
     }
 
     return true;
+}
+
+void StateManager::ReportRejects(Timestamp now)
+{
+    // Every rejected advertisement used to log two warnings. Near other people's AirPods that is
+    // hundreds of lines per minute, so the details moved to Trace and this summary remains.
+    if (now - _rejectsSince < kRejectSummaryInterval) {
+        return;
+    }
+
+    const auto total = _rejects.rssi + _rejects.model + _rejects.battery + _rejects.rssiDiff;
+    if (total > 0) {
+        LOG(Info,
+            "StateManager: rejected {} advertisements in the last {}s as not from the bound "
+            "device. rssi: {}, model: {}, battery: {}, rssiDiff: {}",
+            total, std::chrono::duration_cast<std::chrono::seconds>(now - _rejectsSince).count(),
+            _rejects.rssi, _rejects.model, _rejects.battery, _rejects.rssiDiff);
+    }
+
+    _rejects = {};
+    _rejectsSince = now;
 }
 
 void StateManager::UpdateAdv(Advertisement adv)

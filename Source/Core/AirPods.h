@@ -149,7 +149,15 @@ private:
     std::optional<State> _cachedState;
     int16_t _rssiMin{std::numeric_limits<int16_t>::max()};
 
+    static constexpr std::chrono::seconds kRejectSummaryInterval{60};
+    struct RejectCounters {
+        uint32_t rssi{}, model{}, battery{}, rssiDiff{};
+    };
+    mutable RejectCounters _rejects;
+    Timestamp _rejectsSince{Clock::now()};
+
     bool IsPossibleDesiredAdv(const Advertisement &adv) const;
+    void ReportRejects(Timestamp now);
     void UpdateAdv(Advertisement adv);
     std::optional<UpdateEvent> UpdateState();
     std::function<void()> ResetAll();
