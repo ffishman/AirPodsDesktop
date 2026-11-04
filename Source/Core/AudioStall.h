@@ -99,6 +99,14 @@ public:
     void SetMode(Mode mode);
     Mode GetMode() const;
 
+    // True while a stall is detected and not yet recovered or cleared. Thread-safe.
+    bool IsStalled() const;
+
+    // Asks the worker to disconnect and reconnect on its next poll, whatever the mode (except
+    // Disabled, where no worker runs) and without consuming the automatic recovery budget. Meant
+    // for an explicit user action such as a click on the tray icon. Thread-safe.
+    void RequestRecovery();
+
     // Runs one poll/decide/act iteration on the calling thread and emits the resulting notices
     // directly. Meant for tests with `Config::interval == 0`; never call it while a worker runs.
     void Step(Clock::time_point now);
@@ -120,6 +128,8 @@ private:
         std::shared_ptr<Backend> backend;
         Config config;
         std::atomic<Mode> mode{Mode::Disabled};
+        std::atomic<bool> stalled{false};
+        std::atomic<bool> recoveryRequested{false};
 
         // Worker-thread only.
         Detector detector;
@@ -129,6 +139,8 @@ private:
         std::optional<Sample> lastSample;
 
         std::vector<Notice> RunStep(Clock::time_point now, std::stop_token stopToken);
+        void
+        RunRecovery(Clock::time_point now, std::stop_token stopToken, std::vector<Notice> &notices);
     };
 
     struct Worker;

@@ -163,6 +163,10 @@ private Q_SLOTS:
     void persistentStallGivesUpAfterTheBudget();
     void healthyStreamNeverTriggersRecovery();
     void workerThreadPollsAndDeliversNotices();
+    void manualRecoveryWorksInObserveMode();
+    void manualRecoveryNeedsABluetoothOutput();
+    void manualRecoveryBypassesTheBudget();
+    void isStalledFollowsTheDetector();
 };
 
 void AudioStallTests::idleSamplesNeverReport()
@@ -391,6 +395,79 @@ void AudioStallTests::workerThreadPollsAndDeliversNotices()
         QTRY_VERIFY_WITH_TIMEOUT(backend->attaches.load() == 2, 5000);
     }
     QCOMPARE(backend->detaches.load(), 2);
+}
+
+void AudioStallTests::manualRecoveryWorksInObserveMode()
+{
+    Harness h;
+    h.controller.SetMode(Mode::Observe);
+    h.backend->next = Stuck();
+    h.backend->afterRecover = Running();
+
+    h.Run(kT0, kT0 + 6s);
+    QVERIFY(h.controller.IsStalled());
+    QCOMPARE(h.backend->recovers.load(), 0);
+
+    h.controller.RequestRecovery();
+    h.controller.Step(kT0 + 6500ms);
+    QCOMPARE(h.backend->recovers.load(), 1);
+    QCOMPARE(h.Count(Notice::RecoveryStarted), 1);
+    QVERIFY(!h.controller.IsStalled());
+
+    h.controller.Step(kT0 + 7s);
+    QCOMPARE(h.Count(Notice::RecoverySucceeded), 1);
+
+    // The request is consumed once.
+    h.Run(kT0 + 7500ms, kT0 + 2min);
+    QCOMPARE(h.backend->recovers.load(), 1);
+}
+
+void AudioStallTests::manualRecoveryNeedsABluetoothOutput()
+{
+    Harness h;
+    h.controller.SetMode(Mode::Observe);
+    h.backend->next = Sample{false, true, false, 0.f};
+    h.controller.RequestRecovery();
+    h.controller.Step(kT0);
+    QCOMPARE(h.backend->recovers.load(), 0);
+    QVERIFY(h.notices.empty());
+}
+
+void AudioStallTests::manualRecoveryBypassesTheBudget()
+{
+    Harness h;
+    h.controller.SetMode(Mode::Recover);
+    h.backend->next = Stuck();
+
+    h.Run(kT0, kT0 + 5s); // automatic attempt 1 at 5s
+    QCOMPARE(h.backend->recovers.load(), 1);
+
+    // Inside the 30s cooldown an automatic attempt is refused, a manual one is not.
+    h.controller.RequestRecovery();
+    h.controller.Step(kT0 + 6s);
+    QCOMPARE(h.backend->recovers.load(), 2);
+}
+
+void AudioStallTests::isStalledFollowsTheDetector()
+{
+    Harness h;
+    h.controller.SetMode(Mode::Observe);
+    h.backend->next = Stuck();
+    h.Run(kT0, kT0 + 4s);
+    QVERIFY(!h.controller.IsStalled());
+    h.Run(kT0 + 4500ms, kT0 + 6s);
+    QVERIFY(h.controller.IsStalled());
+
+    h.backend->next = Running();
+    h.controller.Step(kT0 + 6500ms);
+    QVERIFY(!h.controller.IsStalled());
+
+    h.backend->next = Stuck();
+    h.Run(kT0 + 7s, kT0 + 13s);
+    QVERIFY(h.controller.IsStalled());
+    h.controller.SetMode(Mode::Disabled);
+    h.controller.Step(kT0 + 14s);
+    QVERIFY(!h.controller.IsStalled());
 }
 
 QTEST_GUILESS_MAIN(AudioStallTests)

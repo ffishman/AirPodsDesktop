@@ -424,6 +424,9 @@ void TrayIcon::OnQuickConnectOutcome(Core::QuickConnect::Outcome outcome, const 
         icon = QSystemTrayIcon::Warning;
         break;
     case Core::QuickConnect::Outcome::AlreadyConnected:
+        if (_alreadyConnectedHandler && _alreadyConnectedHandler()) {
+            return;
+        }
         text = tr("%1 is already connected.").arg(deviceName);
         break;
     case Core::QuickConnect::Outcome::RequestStarted:

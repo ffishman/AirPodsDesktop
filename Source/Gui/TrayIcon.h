@@ -51,6 +51,14 @@ public:
 
     void UpdateState(const Core::AirPods::State &state);
     void OnAudioStallNotice(Core::AudioStall::Notice notice);
+
+    // Called when a quick connect click finds the device already connected. Returning true means
+    // the click was used for something else (a stall recovery), so the "already connected" message
+    // is skipped.
+    void SetAlreadyConnectedHandler(std::function<bool()> handler)
+    {
+        _alreadyConnectedHandler = std::move(handler);
+    }
     void Unavailable();
     void Disconnect();
     void Unbind();
@@ -87,6 +95,7 @@ private:
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
     std::optional<IconRenderState> _lastIconRenderState;
     Core::QuickConnect::Controller &_quickConnect;
+    std::function<bool()> _alreadyConnectedHandler;
     TrayActivationState _trayActivationState;
     QTimer _singleClickTimer{this};
 

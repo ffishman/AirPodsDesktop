@@ -222,6 +222,14 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     connect(
         _audioStall.get(), &Core::AudioStall::Controller::NoticeRaised, _trayIcon.get(),
         &Gui::TrayIcon::OnAudioStallNotice);
+    // A quick connect click on a device that is connected but stalled recovers it instead.
+    _trayIcon->SetAlreadyConnectedHandler([audioStall = _audioStall.get()] {
+        if (!audioStall->IsStalled()) {
+            return false;
+        }
+        audioStall->RequestRecovery();
+        return true;
+    });
     _autoStartService = Core::AutoStart::CreateAutoStartService();
     _airPodsManager = std::make_unique<Core::AirPods::Manager>(this);
 

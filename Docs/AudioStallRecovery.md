@@ -76,6 +76,10 @@ Rate limit: at least 30 s between attempts, at most 3 attempts per 10 minutes, t
   This is the mode for the first days of field testing, to look for false positives.
 - **Automatic**: detect and recover.
 
+In Observe only and Automatic, a quick connect click on the tray icon while a stall is detected
+disconnects and reconnects the device instead of reporting "already connected". A manual request
+skips the automatic rate limit.
+
 ## Field testing
 
 1. Install the CI build, set **Silent audio recovery** to **Observe only**.

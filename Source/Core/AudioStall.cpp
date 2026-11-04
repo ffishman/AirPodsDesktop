@@ -75,8 +75,11 @@ std::vector<Notice> Controller::State::RunStep(Clock::time_point now, std::stop_
 
     const auto currentMode = mode.load();
     if (currentMode == Mode::Disabled) {
+        recoveryRequested = false;
+        stalled = false;
         return notices;
     }
+    const bool manualRecovery = recoveryRequested.exchange(false);
 
     const Sample sample = backend->Poll();
 
@@ -130,26 +133,22 @@ std::vector<Notice> Controller::State::RunStep(Clock::time_point now, std::stop_
         }
     }
 
-    if (currentMode == Mode::Recover && detector.IsStalled() && sample.eligible &&
+    if (manualRecovery) {
+        if (sample.eligible) {
+            LOG(Warn, "AudioStall: recovery requested by the user.");
+            RunRecovery(now, stopToken, notices);
+        }
+        else {
+            LOG(Info, "AudioStall: recovery requested, but the default output is not Bluetooth.");
+        }
+    }
+    else if (
+        currentMode == Mode::Recover && detector.IsStalled() && sample.eligible &&
         sample.sessionsActive)
     {
         if (budget.TryConsume(now)) {
             gaveUpReported = false;
-            LOG(Warn, "AudioStall: disconnecting and reconnecting the Bluetooth audio device.");
-            notices.push_back(Notice::RecoveryStarted);
-
-            const bool accepted = backend->Recover(stopToken);
-            detector.Reset();
-            lastSample.reset();
-
-            if (accepted) {
-                verifyDeadline = now + config.verifyTimeout;
-            }
-            else {
-                LOG(Warn, "AudioStall: Windows did not accept the reconnect request.");
-                verifyDeadline.reset();
-                notices.push_back(Notice::RecoveryFailed);
-            }
+            RunRecovery(now, stopToken, notices);
         }
         else if (budget.IsExhausted(now) && !gaveUpReported) {
             gaveUpReported = true;
@@ -159,7 +158,28 @@ std::vector<Notice> Controller::State::RunStep(Clock::time_point now, std::stop_
         }
     }
 
+    stalled = detector.IsStalled();
     return notices;
+}
+
+void Controller::State::RunRecovery(
+    Clock::time_point now, std::stop_token stopToken, std::vector<Notice> &notices)
+{
+    LOG(Warn, "AudioStall: disconnecting and reconnecting the Bluetooth audio device.");
+    notices.push_back(Notice::RecoveryStarted);
+
+    const bool accepted = backend->Recover(stopToken);
+    detector.Reset();
+    lastSample.reset();
+
+    if (accepted) {
+        verifyDeadline = now + config.verifyTimeout;
+    }
+    else {
+        LOG(Warn, "AudioStall: Windows did not accept the reconnect request.");
+        verifyDeadline.reset();
+        notices.push_back(Notice::RecoveryFailed);
+    }
 }
 
 Controller::Controller(std::shared_ptr<Backend> backend) : Controller{std::move(backend), Config{}}
@@ -206,6 +226,16 @@ void Controller::SetMode(Mode mode)
 Mode Controller::GetMode() const
 {
     return _state->mode.load();
+}
+
+bool Controller::IsStalled() const
+{
+    return _state->stalled.load();
+}
+
+void Controller::RequestRecovery()
+{
+    _state->recoveryRequested = true;
 }
 
 void Controller::Step(Clock::time_point now)
@@ -273,6 +303,8 @@ void Controller::StopWorker()
 
     auto worker = std::move(_worker);
     worker->stop.request_stop();
+    _state->stalled = false;
+    _state->recoveryRequested = false;
 
     if (worker->finished.wait_for(kWorkerJoinTimeout) == std::future_status::ready) {
         worker->thread.join();
