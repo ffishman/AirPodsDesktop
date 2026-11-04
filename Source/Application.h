@@ -119,6 +119,7 @@ private:
     void OnTrayQuickConnectDeviceChanged(const QString &deviceId) override;
     void OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior) override;
     void OnAudioStallRecoveryChanged(Core::Settings::AudioStallRecovery mode) override;
+    void OnProximityKeysChanged(const QString &text) override;
 };
 
 #define ApdApp (dynamic_cast<ApdApplication *>(QCoreApplication::instance()))

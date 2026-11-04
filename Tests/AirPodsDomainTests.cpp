@@ -158,6 +158,8 @@ private Q_SLOTS:
     void ResolvesAirPodsMaxUsbCDisplayName();
     void ParsesAdvertisementState();
     void FiltersDuplicateAndWeakAdvertisements();
+    void KeyedAdvertisementReportsExactBattery();
+    void KeyedStateManagerAcceptsOnlyResolvingAddresses();
     void MergesAdvertisementsFromBothSides();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
@@ -335,6 +337,85 @@ void AirPodsDomainTests::FiltersDuplicateAndWeakAdvertisements()
         Advertisement{MakeAdvertisementData(0x1234, -90, Side::Left, 7, 7, 5)});
     QVERIFY(!weak.has_value());
     QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 80U);
+}
+
+namespace {
+
+// A real AirPods Pro advertisement with its proximity keys, from the CAPod test suite.
+ReceivedData MakeKeyedSampleData(int16_t rssi = -60)
+{
+    ReceivedData data;
+    data.address = 0x5A162B91D1CD;
+    data.rssi = rssi;
+    data.manufacturerDataMap.emplace(
+        Core::AppleCP::VendorId,
+        std::vector<uint8_t>{0x07, 0x19, 0x01, 0x0E, 0x20, 0x51, 0x9A, 0x98, 0x33,
+                             0x00, 0x04, 0x0C, 0x14, 0xE0, 0xEB, 0x43, 0x3F, 0x4B,
+                             0x22, 0xC0, 0xA9, 0xED, 0xCB, 0x33, 0xE7, 0x09, 0x71});
+    return data;
+}
+
+Core::AppleCP::ProximityKeys SampleKeys()
+{
+    auto keys = Core::AppleCP::ParseProximityKeys(
+        "IRK=7904651EE2CCD926F26E20EE3ECCDE79 ENC=3B9C8057E6457FF21B8E07636C99E029");
+    if (!keys.has_value()) {
+        qFatal("Sample proximity keys failed to parse");
+    }
+    return *keys;
+}
+
+} // namespace
+
+void AirPodsDomainTests::KeyedAdvertisementReportsExactBattery()
+{
+    Advertisement plain{MakeKeyedSampleData()};
+    QVERIFY(!plain.IsVerified());
+    QCOMPARE(plain.GetAdvState().pods.left.battery.Value(), 90u);
+    QCOMPARE(plain.GetAdvState().caseBox.battery.Value(), 80u);
+
+    Advertisement keyed{MakeKeyedSampleData()};
+    QVERIFY(keyed.ApplyProximityKeys(SampleKeys()));
+    QVERIFY(keyed.IsVerified());
+
+    const auto &state = keyed.GetAdvState();
+    QCOMPARE(state.model, Model::AirPods_Pro);
+    QCOMPARE(state.pods.left.battery.Value(), 98u);
+    QVERIFY(!state.pods.left.isCharging);
+    QCOMPARE(state.pods.right.battery.Value(), 100u);
+    QVERIFY(state.pods.right.isCharging);
+    QCOMPARE(state.caseBox.battery.Value(), 86u);
+    QVERIFY(!state.caseBox.isCharging);
+
+    // An IRK alone verifies the address but leaves the public 10 % values.
+    auto irkOnly = SampleKeys();
+    irkOnly.encKey.reset();
+    Advertisement verifiedOnly{MakeKeyedSampleData()};
+    QVERIFY(verifiedOnly.ApplyProximityKeys(irkOnly));
+    QCOMPARE(verifiedOnly.GetAdvState().pods.left.battery.Value(), 90u);
+}
+
+void AirPodsDomainTests::KeyedStateManagerAcceptsOnlyResolvingAddresses()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    manager.SetProximityKeys(SampleKeys());
+
+    // Someone else's AirPods Pro: a plausible advertisement whose address does not resolve.
+    const auto foreign = manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x4A162B91D1CD, -45, Side::Left, 9, 9, 8, 0x200E)});
+    QVERIFY(!foreign.has_value());
+    QVERIFY(!manager.GetCurrentState().has_value());
+
+    // Ours is accepted even below the RSSI floor, because the key proves who sent it.
+    const auto ours = manager.OnAdvReceived(Advertisement{MakeKeyedSampleData(-95)});
+    QVERIFY(ours.has_value());
+    QCOMPARE(ours->newState.pods.left.battery.Value(), 98u);
+
+    // Clearing the keys restores the heuristics: the same weak advertisement is now refused.
+    manager.SetProximityKeys(std::nullopt);
+    manager.Disconnect();
+    QVERIFY(!manager.OnAdvReceived(Advertisement{MakeKeyedSampleData(-95)}).has_value());
 }
 
 void AirPodsDomainTests::MergesAdvertisementsFromBothSides()

@@ -18,6 +18,7 @@
 
 #include "AirPods.h"
 
+#include <algorithm>
 #include <cstring>
 
 #include "../Assert.h"
@@ -67,6 +68,39 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
     if (_state.caseBox.battery.Available()) {
         _state.caseBox.battery = _state.caseBox.battery.Value() * 10;
     }
+}
+
+bool Advertisement::ApplyProximityKeys(const AppleCP::ProximityKeys &keys)
+{
+    _verified = AppleCP::ResolvesAddress(keys.irk, _data.address);
+    if (!_verified || !keys.encKey.has_value()) {
+        return _verified;
+    }
+
+    const auto &data = GetMfrData();
+    AppleCP::Block128 encrypted{};
+    std::copy(
+        data.end() - static_cast<std::ptrdiff_t>(encrypted.size()), data.end(), encrypted.begin());
+    const auto status = AppleCP::DecryptStatus(*keys.encKey, encrypted);
+
+    const bool leftBroadcasts = _state.side == Side::Left;
+    const auto &left = leftBroadcasts ? status.broadcasting : status.other;
+    const auto &right = leftBroadcasts ? status.other : status.broadcasting;
+
+    // Out-of-range values (a pod that is not reporting) keep the public 10 % value or its absence.
+    if (left.percent.has_value()) {
+        _state.pods.left.battery = *left.percent;
+        _state.pods.left.isCharging = left.charging;
+    }
+    if (right.percent.has_value()) {
+        _state.pods.right.battery = *right.percent;
+        _state.pods.right.isCharging = right.charging;
+    }
+    if (status.caseBox.percent.has_value()) {
+        _state.caseBox.battery = *status.caseBox.percent;
+        _state.caseBox.isCharging = status.caseBox.charging;
+    }
+    return true;
 }
 
 int16_t Advertisement::GetRssi() const

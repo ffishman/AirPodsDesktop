@@ -169,6 +169,15 @@ void OnApply_battery_on_taskbar(const Fields &newFields)
     });
 }
 
+void OnApply_proximity_keys(const Fields &newFields)
+{
+    LOG(Info, "OnApply_proximity_keys: {}", LogSensitiveData(newFields.proximity_keys));
+
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnProximityKeysChanged(newFields.proximity_keys);
+    });
+}
+
 class Manager : public Helper::Singleton<Manager>
 {
 protected:

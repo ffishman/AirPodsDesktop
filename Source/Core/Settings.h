@@ -56,6 +56,7 @@ public:
     virtual void OnTrayQuickConnectDeviceChanged(const QString &deviceId) = 0;
     virtual void OnTaskbarBatteryChanged(TaskbarStatusBehavior behavior) = 0;
     virtual void OnAudioStallRecoveryChanged(AudioStallRecovery) {}
+    virtual void OnProximityKeysChanged(const QString &) {}
 };
 
 void SetApplyObserver(ApplyObserver *observer);
@@ -95,7 +96,11 @@ void SetRepository(std::unique_ptr<Repository> repository);
         Impl::OnApply(&OnApply_tray_quick_connect_device_id),                                       \
         Impl::Sensitive{})                                                                          \
     callback(TaskbarStatusBehavior, battery_on_taskbar, {TaskbarStatusBehavior::Disable},          \
-        Impl::OnApply(&OnApply_battery_on_taskbar))
+        Impl::OnApply(&OnApply_battery_on_taskbar))                                                \
+    callback(QString, proximity_keys, {},                                                          \
+        Impl::OnApply(&OnApply_proximity_keys),                                                    \
+        Impl::Sensitive{},                                                                         \
+        Impl::Desc{QT_TRANSLATE_NOOP("QObject", "The identity key (IRK) and encryption key of your AirPods, as stored on a Mac (MagicAccIRK and MagicAccEncKey). With them, only advertisements from your AirPods are accepted and the battery is shown in 1% steps.")})
 // clang-format on
 
 struct Fields {
@@ -261,6 +266,7 @@ void OnApply_tray_icon_battery(const Fields &newFields);
 void OnApply_tray_quick_connect_enabled(const Fields &newFields);
 void OnApply_tray_quick_connect_device_id(const Fields &newFields);
 void OnApply_battery_on_taskbar(const Fields &newFields);
+void OnApply_proximity_keys(const Fields &newFields);
 
 struct MetaFields {
 #define DECLARE_META_FIELD(type, name, dft, ...)                                                   \

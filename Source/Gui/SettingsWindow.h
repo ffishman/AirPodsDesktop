@@ -63,6 +63,7 @@ private:
     void RestoreDefaults();
     void Update(const Fields &fields, bool trigger);
     void UpdateQuickConnectDevices(const Fields &fields);
+    void UpdateProximityKeysStatus(const QString &text);
     void UpdateDescriptions();
     void UpdateStandardButtonTexts();
     void UpdateAdvOverride();
@@ -82,6 +83,7 @@ private:
     // Features
     void On_cbLowAudioLatency_toggled(bool checked);
     void On_cbAudioStallRecovery_currentIndexChanged(int index);
+    void On_leProximityKeys_editingFinished();
     void On_cbTrayQuickConnectEnabled_toggled(bool checked);
     void On_cbTrayQuickConnectDevice_currentIndexChanged(int index);
     void On_cbAutoEarDetection_toggled(bool checked);

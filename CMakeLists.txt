@@ -324,6 +324,7 @@ set(
     "Source/Core/AirPodsAdvertisement.cpp"
     "Source/Core/AirPodsStateManager.cpp"
     "Source/Core/AppleCP.cpp"
+    "Source/Core/AppleProximityKeys.cpp"
     "Source/Core/AudioStallDetector.cpp"
 )
 

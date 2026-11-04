@@ -37,6 +37,20 @@ target_include_directories(QuickConnectTests PRIVATE "${CMAKE_SOURCE_DIR}")
 
 add_test(NAME QuickConnectTests COMMAND QuickConnectTests)
 
+add_executable(ProximityKeysTests ProximityKeysTests.cpp)
+
+target_link_libraries(
+    ProximityKeysTests
+
+    PRIVATE
+    apd_core
+    Qt6::Test
+)
+
+target_include_directories(ProximityKeysTests PRIVATE "${CMAKE_SOURCE_DIR}")
+
+add_test(NAME ProximityKeysTests COMMAND ProximityKeysTests)
+
 add_executable(AudioStallTests AudioStallTests.cpp)
 
 target_link_libraries(
@@ -109,7 +123,7 @@ foreach(scale_factor 1 1.25 1.5 2)
     )
 endforeach()
 
-foreach(test_target AirPodsDomainTests QuickConnectTests AudioStallTests AnimationViewTests UiRenderingTests)
+foreach(test_target AirPodsDomainTests QuickConnectTests AudioStallTests ProximityKeysTests AnimationViewTests UiRenderingTests)
     add_custom_command(
         TARGET ${test_target}
         POST_BUILD

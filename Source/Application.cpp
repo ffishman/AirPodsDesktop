@@ -497,6 +497,11 @@ void ApdApplication::OnAudioStallRecoveryChanged(Core::Settings::AudioStallRecov
     }
 }
 
+void ApdApplication::OnProximityKeysChanged(const QString &text)
+{
+    _airPodsManager->OnProximityKeysChanged(text);
+}
+
 void ApdApplication::OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior)
 {
     emit _taskbarStatus->OnSettingsChangedSafely(behavior);

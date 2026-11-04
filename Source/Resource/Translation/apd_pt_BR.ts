@@ -88,6 +88,22 @@ Aproveite.</translation>
         <source>Close</source>
         <translation>Fechar</translation>
     </message>
+    <message>
+        <source>No keys: other people's AirPods nearby can be mistaken for yours.</source>
+        <translation>Sem chaves: AirPods de outras pessoas por perto podem ser confundidos com os seus.</translation>
+    </message>
+    <message>
+        <source>Not recognized. Paste the MagicAccIRK value, optionally followed by MagicAccEncKey (32 hexadecimal digits each).</source>
+        <translation>Formato não reconhecido. Cole o valor de MagicAccIRK e, se tiver, o de MagicAccEncKey (32 dígitos hexadecimais cada).</translation>
+    </message>
+    <message>
+        <source>Identity and encryption keys recognized.</source>
+        <translation>Chaves de identidade e de criptografia reconhecidas.</translation>
+    </message>
+    <message>
+        <source>Identity key recognized. Add the encryption key for 1% battery steps.</source>
+        <translation>Chave de identidade reconhecida. Adicione a chave de criptografia para a bateria de 1 em 1%.</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
@@ -297,6 +313,10 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
         <source>Fixes Bluetooth audio that stays connected but silent. When Windows still shows the headset as the output but no sound reaches it, the connection is turned off and on again. &quot;Observe only&quot; just writes what it detects to the log.</source>
         <translation>Corrige o áudio Bluetooth que fica conectado mas mudo. Quando o Windows ainda mostra o fone como saída mas nenhum som chega até ele, a conexão é desligada e ligada de novo. &quot;Só observar&quot; apenas registra no log o que for detectado.</translation>
     </message>
+    <message>
+        <source>The identity key (IRK) and encryption key of your AirPods, as stored on a Mac (MagicAccIRK and MagicAccEncKey). With them, only advertisements from your AirPods are accepted and the battery is shown in 1% steps.</source>
+        <translation>A chave de identidade (IRK) e a chave de criptografia dos seus AirPods, como ficam guardadas num Mac (MagicAccIRK e MagicAccEncKey). Com elas, só os anúncios dos seus AirPods são aceitos e a bateria aparece de 1 em 1%.</translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -446,6 +466,10 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     <message>
         <source>Automatic</source>
         <translation>Automático</translation>
+    </message>
+    <message>
+        <source>Proximity keys</source>
+        <translation>Chaves de proximidade</translation>
     </message>
 </context>
 <context>

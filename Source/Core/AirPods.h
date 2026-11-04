@@ -31,6 +31,7 @@
 
 #include "Bluetooth.h"
 #include "AppleCP.h"
+#include "AppleProximityKeys.h"
 #include "../Helper.h"
 
 namespace Core::AirPods {
@@ -105,10 +106,20 @@ public:
     std::vector<uint8_t> GetDesensitizedData() const;
     const AdvState &GetAdvState() const;
 
+    // Checks the advertising address against the IRK and, when it matches and an encryption key
+    // is present, replaces the 10 % battery steps with the exact values from the encrypted part.
+    // Returns whether the advertisement is proven to come from the keyed AirPods.
+    bool ApplyProximityKeys(const AppleCP::ProximityKeys &keys);
+    bool IsVerified() const
+    {
+        return _verified;
+    }
+
 private:
     Bluetooth::AdvertisementWatcher::ReceivedData _data;
     AppleCP::AirPods _protocol;
     AdvState _state;
+    bool _verified{};
 
     const std::vector<uint8_t> &GetMfrData() const;
 };
@@ -136,6 +147,10 @@ public:
 
     void OnRssiMinChanged(int16_t rssiMin);
 
+    // With keys, only advertisements whose address resolves with the IRK are accepted, and the
+    // heuristics are skipped for them. Without keys the heuristics decide, as before.
+    void SetProximityKeys(std::optional<AppleCP::ProximityKeys> keys);
+
 private:
     using Clock = std::chrono::steady_clock;
     using Timestamp = std::chrono::time_point<Clock>;
@@ -148,10 +163,11 @@ private:
     Helper::Sides<std::optional<std::pair<Advertisement, Timestamp>>> _adv;
     std::optional<State> _cachedState;
     int16_t _rssiMin{std::numeric_limits<int16_t>::max()};
+    std::optional<AppleCP::ProximityKeys> _proximityKeys;
 
     static constexpr std::chrono::seconds kRejectSummaryInterval{60};
     struct RejectCounters {
-        uint32_t rssi{}, model{}, battery{}, rssiDiff{};
+        uint32_t rssi{}, model{}, battery{}, rssiDiff{}, irk{};
     };
     mutable RejectCounters _rejects;
     Timestamp _rejectsSince{Clock::now()};
@@ -181,6 +197,8 @@ public:
     void OnRssiMinChanged(int16_t rssiMin);
     void OnAutomaticEarDetectionChanged(bool enable);
     void OnBoundDeviceAddressChanged(uint64_t address);
+    // `text` in any format `AppleCP::ParseProximityKeys` accepts; empty clears the keys.
+    void OnProximityKeysChanged(const QString &text);
 
 private:
     std::mutex _mutex;

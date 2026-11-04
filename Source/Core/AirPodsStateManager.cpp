@@ -68,6 +68,10 @@ auto StateManager::OnAdvReceived(Advertisement adv) -> std::optional<UpdateEvent
 {
     std::lock_guard<std::mutex> lock{_mutex};
 
+    if (_proximityKeys.has_value()) {
+        adv.ApplyProximityKeys(*_proximityKeys);
+    }
+
     const bool desired = IsPossibleDesiredAdv(adv);
     ReportRejects(Clock::now());
 
@@ -99,6 +103,12 @@ void StateManager::OnRssiMinChanged(int16_t rssiMin)
     _rssiMin = rssiMin;
 }
 
+void StateManager::SetProximityKeys(std::optional<AppleCP::ProximityKeys> keys)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _proximityKeys = std::move(keys);
+}
+
 void StateManager::SetOnDiscardState(std::function<void()> callback)
 {
     std::lock_guard<std::mutex> lock{_mutex};
@@ -107,6 +117,16 @@ void StateManager::SetOnDiscardState(std::function<void()> callback)
 
 bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
 {
+    if (_proximityKeys.has_value()) {
+        if (adv.IsVerified()) {
+            return true;
+        }
+        ++_rejects.irk;
+        LOG(Trace,
+            "IsPossibleDesiredAdv returns false. Reason: address does not resolve with the IRK");
+        return false;
+    }
+
     const auto advRssi = adv.GetRssi();
     if (advRssi < _rssiMin) {
         ++_rejects.rssi;
@@ -198,13 +218,14 @@ void StateManager::ReportRejects(Timestamp now)
         return;
     }
 
-    const auto total = _rejects.rssi + _rejects.model + _rejects.battery + _rejects.rssiDiff;
+    const auto total =
+        _rejects.rssi + _rejects.model + _rejects.battery + _rejects.rssiDiff + _rejects.irk;
     if (total > 0) {
         LOG(Info,
             "StateManager: rejected {} advertisements in the last {}s as not from the bound "
-            "device. rssi: {}, model: {}, battery: {}, rssiDiff: {}",
+            "device. rssi: {}, model: {}, battery: {}, rssiDiff: {}, irk: {}",
             total, std::chrono::duration_cast<std::chrono::seconds>(now - _rejectsSince).count(),
-            _rejects.rssi, _rejects.model, _rejects.battery, _rejects.rssiDiff);
+            _rejects.rssi, _rejects.model, _rejects.battery, _rejects.rssiDiff, _rejects.irk);
     }
 
     _rejects = {};

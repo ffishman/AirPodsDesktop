@@ -30,9 +30,11 @@
 #include <QPushButton>
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QLineEdit>
 
 #include <Config.h>
 
+#include "../Core/AppleProximityKeys.h"
 #include "../Core/Debug.h"
 
 using namespace std::chrono_literals;
@@ -229,6 +231,15 @@ SettingsWindow::SettingsWindow(
             }
         });
 
+    connect(_ui.leProximityKeys, &QLineEdit::editingFinished, this, [this] {
+        if (_trigger) {
+            On_leProximityKeys_editingFinished();
+        }
+    });
+    connect(_ui.leProximityKeys, &QLineEdit::textChanged, this, [this](const QString &text) {
+        UpdateProximityKeysStatus(text);
+    });
+
     connect(_ui.cbLowAudioLatency, &QCheckBox::toggled, this, [this](bool checked) {
         if (_trigger) {
             On_cbLowAudioLatency_toggled(checked);
@@ -337,6 +348,8 @@ void SettingsWindow::UpdateDescriptions()
 
     _ui.lbDescLowAudioLatency->setText(constMetaFields.low_audio_latency.Description());
     _ui.lbDescAudioStallRecovery->setText(constMetaFields.audio_stall_recovery.Description());
+    _ui.lbDescProximityKeys->setText(constMetaFields.proximity_keys.Description());
+    UpdateProximityKeysStatus(_ui.leProximityKeys->text());
     _ui.lbDescAutoEarDetection->setText(constMetaFields.automatic_ear_detection.Description());
     _ui.lbDescTrayQuickConnect->setText(constMetaFields.tray_quick_connect_enabled.Description());
 
@@ -424,6 +437,11 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
     _ui.cbLowAudioLatency->setChecked(fields.low_audio_latency);
 
     _ui.cbAudioStallRecovery->setCurrentIndex(static_cast<int>(fields.audio_stall_recovery));
+
+    if (_ui.leProximityKeys->text() != fields.proximity_keys) {
+        _ui.leProximityKeys->setText(fields.proximity_keys);
+    }
+    UpdateProximityKeysStatus(fields.proximity_keys);
 
     _ui.cbAutoEarDetection->setChecked(fields.automatic_ear_detection);
 
@@ -596,6 +614,37 @@ void SettingsWindow::On_cbAudioStallRecovery_currentIndexChanged(int index)
         return;
     }
     ModifiableAccess()->audio_stall_recovery = static_cast<AudioStallRecovery>(index);
+}
+
+void SettingsWindow::On_leProximityKeys_editingFinished()
+{
+    const auto text = _ui.leProximityKeys->text().trimmed();
+    if (GetCurrent().proximity_keys != text) {
+        ModifiableAccess()->proximity_keys = text;
+    }
+}
+
+void SettingsWindow::UpdateProximityKeysStatus(const QString &text)
+{
+    if (text.trimmed().isEmpty()) {
+        _ui.lbProximityKeysStatus->setText(
+            tr("No keys: other people's AirPods nearby can be mistaken for yours."));
+        return;
+    }
+
+    const auto keys = Core::AppleCP::ParseProximityKeys(text.toStdString());
+    if (!keys.has_value()) {
+        _ui.lbProximityKeysStatus->setText(
+            tr("Not recognized. Paste the MagicAccIRK value, optionally followed by "
+               "MagicAccEncKey (32 hexadecimal digits each)."));
+    }
+    else if (keys->encKey.has_value()) {
+        _ui.lbProximityKeysStatus->setText(tr("Identity and encryption keys recognized."));
+    }
+    else {
+        _ui.lbProximityKeysStatus->setText(
+            tr("Identity key recognized. Add the encryption key for 1% battery steps."));
+    }
 }
 
 void SettingsWindow::On_cbAutoEarDetection_toggled(bool checked)

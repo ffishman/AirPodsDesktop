@@ -113,6 +113,24 @@ void Manager::OnRssiMinChanged(int16_t rssiMin)
     _stateMgr.OnRssiMinChanged(rssiMin);
 }
 
+void Manager::OnProximityKeysChanged(const QString &text)
+{
+    std::optional<AppleCP::ProximityKeys> keys;
+    if (!text.trimmed().isEmpty()) {
+        keys = AppleCP::ParseProximityKeys(text.toStdString());
+        if (!keys.has_value()) {
+            LOG(Warn, "Proximity keys are set but could not be parsed; ignoring them.");
+        }
+    }
+
+    // Never log key material, only what is present.
+    LOG(Info, "Proximity keys: irk={}, encryption key={}", keys.has_value(),
+        keys.has_value() && keys->encKey.has_value());
+
+    std::lock_guard<std::mutex> lock{_mutex};
+    _stateMgr.SetProximityKeys(std::move(keys));
+}
+
 void Manager::OnAutomaticEarDetectionChanged(bool enable)
 {
     std::lock_guard<std::mutex> lock{_mutex};

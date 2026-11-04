@@ -971,6 +971,82 @@
           </widget>
          </item>
          <item>
+          <widget class="QFrame" name="cardProximityKeys">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="cssClass" stdset="0">
+            <string notr="true">settingCard</string>
+           </property>
+           <layout class="QVBoxLayout" name="cardProximityKeysLayout">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="leftMargin">
+             <number>16</number>
+            </property>
+            <property name="topMargin">
+             <number>12</number>
+            </property>
+            <property name="rightMargin">
+             <number>16</number>
+            </property>
+            <property name="bottomMargin">
+             <number>12</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="lbProximityKeys">
+              <property name="text">
+               <string>Proximity keys</string>
+              </property>
+              <property name="cssClass" stdset="0">
+               <string notr="true">cardTitle</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbDescProximityKeys">
+              <property name="text">
+               <string notr="true"/>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+              <property name="cssClass" stdset="0">
+               <string notr="true">cardDescription</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="leProximityKeys">
+              <property name="echoMode">
+               <enum>QLineEdit::Password</enum>
+              </property>
+              <property name="placeholderText">
+               <string notr="true">IRK=… ENC=…</string>
+              </property>
+              <property name="clearButtonEnabled">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbProximityKeysStatus">
+              <property name="text">
+               <string notr="true"/>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+              <property name="cssClass" stdset="0">
+               <string notr="true">cardDescription</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QFrame" name="cardAutoEarDetection">
            <property name="frameShape">
             <enum>QFrame::NoFrame</enum>
